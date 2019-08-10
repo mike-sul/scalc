@@ -2,6 +2,7 @@ package scalc
 
 import (
 	"github.com/mike-sul/scalc/pkg/scalc"
+	"io"
 	"testing"
 )
 
@@ -12,7 +13,7 @@ type InputSetsToExpected struct {
 }
 
 func testOperator(t *testing.T, testMap []InputSetsToExpected) {
-	for _, val := range testMap {
+	for indx, val := range testMap {
 
 		readers := make([]scalc.SetReader, len(val.inputfiles))
 
@@ -39,12 +40,21 @@ func testOperator(t *testing.T, testMap []InputSetsToExpected) {
 			}
 
 		}
+		_, err = uo.Next()
+		if err == nil {
+			t.Fatalf("Expected EOF, got value for test %d", indx)
+		}
+		if err != io.EOF {
+			t.Fatalf("Expected EOF, got %s", err.Error())
+		}
 	}
 }
 
+// TODO: Consider dynamic generation of an input sets/files instead of usage of predefined set files
 func TestUnionOperator(t *testing.T) {
 
 	testMap := []InputSetsToExpected{
+		{scalc.UnionOperatorId, []string{"a.txt"}, []int{1, 2, 3}},
 		{scalc.UnionOperatorId, []string{"a.txt", "b.txt"}, []int{1, 2, 3, 4}},
 		{scalc.UnionOperatorId, []string{"a.txt", "c.txt"}, []int{1, 2, 3, 4, 5}},
 	}
@@ -55,6 +65,7 @@ func TestUnionOperator(t *testing.T) {
 func TestInterOperator(t *testing.T) {
 
 	testMap := []InputSetsToExpected{
+		{scalc.InterOperatorId, []string{"a.txt"}, []int{1, 2, 3}},
 		{scalc.InterOperatorId, []string{"a.txt", "b.txt"}, []int{2, 3}},
 		{scalc.InterOperatorId, []string{"a.txt", "c.txt"}, []int{3}},
 	}

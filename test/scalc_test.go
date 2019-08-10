@@ -2,6 +2,7 @@ package scalc
 
 import (
 	"github.com/mike-sul/scalc/pkg/scalc"
+	"io"
 	"os/exec"
 	"strings"
 	"testing"
@@ -107,6 +108,7 @@ func TestScalcSanity(t *testing.T) {
 		"[ SUM [ INT a.txt c.txt ] [ DIF aN.txt c.txt ] ]": {1, 3, 1024, 2048},
 		"[ SUM [ INT a1.txt c.txt ] [ DIF a.txt b.txt ] ]": {1},
 		"[ SUM [ DIF a.txt b.txt ] [ INT a1.txt c.txt ] ]": {1},
+		"[ SUM [ DIF a.txt b.txt ] [ INT a1.txt c.txt ] aN.txt [ SUM a0.txt b.txt ] ]": {1, 2, 3, 4, 1024, 2048},
 	}
 
 	for exp, expDataStream := range testMap {
@@ -123,6 +125,14 @@ func TestScalcSanity(t *testing.T) {
 			if expVal != actVal {
 				t.Errorf("Failed for %s. Expected: %d, got: %d", exp, expVal, actVal)
 			}
+		}
+
+		_, err = ds.Next()
+		if err == nil {
+			t.Fatalf("Expected EOF, got value for test %s", exp)
+		}
+		if err != io.EOF {
+			t.Fatalf("Expected EOF, got %s for %s", err.Error(), exp)
 		}
 	}
 }
