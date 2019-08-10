@@ -1,62 +1,67 @@
 package scalc
 
-import "io"
+import (
+	"io"
+	"math"
+)
 
 const (
 	UnionOperatorId OperatorID = "SUM"
 )
 
 type UnionOperator struct {
-	inputsets []SetReader
+	inputSets []SetReader
 }
 
-func NewUnionOperator(inputsets []SetReader) SetReader {
-	return NewProxy(&UnionOperator{inputsets: inputsets})
+func NewUnionOperator(sets []SetReader) SetReader {
+	return NewProxy(&UnionOperator{inputSets: sets})
 }
 
 func (u *UnionOperator) ComputeNextValue() (int, error) {
-	min, error := u.getInitialMinValue()
-	if error != nil {
-		return 0, error
+	min, err := u.getNextMinValue()
+	if err != nil {
+		return min, err
 	}
 
-	for _, inputset := range u.inputsets {
-
-		val, err := inputset.Peek()
-		// EOF of the ii/current Set has been reached, continue with the next one
-		if err != nil && err == io.EOF {
-			continue
-		}
-		// read/IO error has happened while peeking/reading a value from the set
-		// so, just stop and return the error
-		if err != nil {
-			error = err
-			break
-		}
-
-		if val < min {
-			min = val
-		}
-	}
-
-	for _, inputset := range u.inputsets {
-		val, err := inputset.Peek()
+	// move to the next item in each set the top element of which equals to the computed next value (min)
+	for _, inputSet := range u.inputSets {
+		val, err := inputSet.Peek()
 		if err == nil && val == min {
 			// just move to the next item
 			// EOF or any other error will be considered during next iteration
-			inputset.Next()
+			inputSet.Next()
 		}
 	}
 
-	return min, error
+	return min, err
 }
 
-func (u *UnionOperator) getInitialMinValue() (int, error) {
-	for _, inputset := range u.inputsets {
-		val, err := inputset.Peek()
-		if err == nil {
-			return val, err
+func (u *UnionOperator) getNextMinValue() (int, error) {
+	var curMin = math.MaxInt64
+	var retErr error = nil
+	var nonEofSetCounter = 0
+
+	for _, inputSet := range u.inputSets {
+		val, err := inputSet.Peek()
+		// read/IO error has happened while peeking/reading a value from the set
+		// so, just stop and return the error
+		if err != nil && err != io.EOF {
+			retErr = err
+			break
 		}
+
+		if err == io.EOF {
+			continue
+		}
+
+		if val < curMin {
+			curMin = val
+		}
+		nonEofSetCounter++
 	}
-	return 0, io.EOF
+
+	if nonEofSetCounter == 0 {
+		retErr = io.EOF
+	}
+	return curMin, retErr
 }

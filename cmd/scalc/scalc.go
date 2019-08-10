@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/mike-sul/scalc/pkg/scalc"
+	"io"
 	"os"
 )
 
@@ -30,8 +31,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	for val, err := resSet.Next(); err == nil; val, err = resSet.Next() {
+	var val  int
+	for val, err = resSet.Next(); err == nil; val, err = resSet.Next() {
 		fmt.Println(val)
+	}
+
+	if err != nil && err != io.EOF {
+		fmt.Printf("Error while processing an input expression: %s\n", err.Error())
+		os.Exit(1)
 	}
 
 	os.Exit(0)

@@ -3,7 +3,6 @@ package scalc
 import (
 	"github.com/mike-sul/scalc/pkg/scalc"
 	"io"
-	"strconv"
 	"testing"
 )
 
@@ -56,8 +55,8 @@ func TestFileReaderNegative(t *testing.T) {
 	}
 
 	_, err = fr.Next()
-	if err != strconv.ErrSyntax {
-		t.Fatalf("Expected a type conversion error, got %v ", err)
+	if err == nil {
+		t.Fatal("Expected a type conversion error")
 	}
 
 }

@@ -1,7 +1,7 @@
 package scalc
 
 import (
-	"io"
+	"math"
 )
 
 const (
@@ -9,88 +9,57 @@ const (
 )
 
 type InterOperator struct {
-	inputsets []SetReader
+	inputSets []SetReader
 }
 
-func NewInterOperator(inputsets []SetReader) SetReader {
-	return NewProxy(&InterOperator{inputsets: inputsets})
+func NewInterOperator(sets []SetReader) SetReader {
+	return NewProxy(&InterOperator{inputSets: sets})
 }
 
 func (i *InterOperator) ComputeNextValue() (int, error) {
-	res := 0
-	foundIntersection := false
+	var retErr error = nil
+	var min = math.MaxInt64
 
-	for {
-		min, err := i.nextMinValue()
-		if err != nil {
-			return 0, err
-		}
+	for retErr == nil {
 
-		foundIntersection = true
-
-		for _, inputset := range i.inputsets {
-			val, err := inputset.Peek()
+		min = math.MaxInt64
+		// find a min value across the top elements of the input sets
+		for _, inputSet := range i.inputSets {
+			val, err := inputSet.Peek()
+			// read/IO error has happened while peeking/reading a value from the set
+			// so, just stop and return the error
+			// also, if io.EOF has been reached for at least one set then stop
 			if err != nil {
-				return 0, err
-			}
-			if val != min {
-				// move next for the streams with minimum value
-				for _, inputset1 := range i.inputsets {
-					val, err := inputset1.Peek()
-					if err == nil && val == min {
-						inputset1.Next()
-					}
-				}
-				foundIntersection = false
+				retErr = err
 				break
 			}
+
+			if val < min {
+				min = val
+			}
+
 		}
 
-		if foundIntersection {
-			res = min
-			break
+		// move to the next item in the sets where the top equals to the min
+		// if each set top element equals to the min then an intersection is found
+		foundIntersection := true
+		for _, inputSet := range i.inputSets {
+			val, err := inputSet.Peek()
+			if err != nil {
+				retErr = err
+				break
+			}
+			if val == min {
+				// just move to the next item
+				// EOF or any other error will be considered during next iteration
+				inputSet.Next()
+			} else {
+				foundIntersection = false
+			}
 		}
+
+		if foundIntersection { break }
 	}
 
-	for _, inputset := range i.inputsets {
-		val, err := inputset.Peek()
-		if err == nil && val == res {
-			// just move to the next item
-			// EOF or any other error will be considered during next iteration
-			inputset.Next()
-		}
-	}
-
-	return res, nil
-}
-
-func (u *InterOperator) nextMinValue() (int, error) {
-	min, err := u.getInitialMinValue()
-	if err != nil {
-		return 0, err
-	}
-
-	for _, inputset := range u.inputsets {
-		val, err := inputset.Peek()
-		if err != nil && err == io.EOF {
-			continue
-		}
-		if err != nil {
-			return 0, err
-		}
-		if val < min {
-			min = val
-		}
-	}
-	return min, nil
-}
-
-func (u *InterOperator) getInitialMinValue() (int, error) {
-	for _, inputset := range u.inputsets {
-		val, err := inputset.Peek()
-		if err == nil {
-			return val, err
-		}
-	}
-	return 0, io.EOF
+	return min, retErr
 }

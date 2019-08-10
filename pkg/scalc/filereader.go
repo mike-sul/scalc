@@ -3,6 +3,7 @@ package scalc
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -72,7 +73,7 @@ func (fr *FileReader) readValue() {
 	val, err := strconv.Atoi(line)
 	if err != nil {
 		*fr.buffer = 0
-		fr.lastErr = strconv.ErrSyntax
+		fr.lastErr = fmt.Errorf("invalid value `%s` in %s", line, fr.file.Name())
 		return
 	}
 

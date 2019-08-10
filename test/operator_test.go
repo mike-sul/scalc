@@ -66,6 +66,11 @@ func TestDiffOperator(t *testing.T) {
 	testMap := []InputSetsToExpected{
 		{scalc.DifOperatorId, []string{"a.txt", "b.txt"}, []int{1}},
 		{scalc.DifOperatorId, []string{"a.txt", "c.txt"}, []int{1, 2}},
+		{scalc.DifOperatorId, []string{"a.txt", "b.txt", "c.txt"}, []int{1}},
+		{scalc.DifOperatorId, []string{"a.txt"}, []int{1,2,3}},
+		{scalc.DifOperatorId, []string{"a1.txt"}, []int{1}},
+		{scalc.DifOperatorId, []string{"aN.txt", "b.txt", "c.txt"}, []int{1, 1024, 2048}},
+		{scalc.DifOperatorId, []string{"c.txt", "a.txt"}, []int{4, 5}},
 	}
 
 	testOperator(t, testMap)
