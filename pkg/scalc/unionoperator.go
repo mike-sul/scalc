@@ -14,7 +14,8 @@ type UnionOperator struct {
 }
 
 func NewUnionOperator(sets []SetReader) SetReader {
-	return NewProxy(&UnionOperator{inputSets: sets})
+	//return NewProxy(&UnionOperator{inputSets: sets})
+	return NewChannelProxy(&UnionOperator{inputSets: sets})
 }
 
 func (u *UnionOperator) ComputeNextValue() (int, error) {

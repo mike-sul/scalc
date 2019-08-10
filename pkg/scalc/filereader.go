@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -16,6 +17,7 @@ type FileReader struct {
 
 	buffer  *int
 	lastErr error
+	pipe chan SetVal
 }
 
 func NewFileReader(filename string) (SetReader, error) {
@@ -31,20 +33,24 @@ func NewFileReader(filename string) (SetReader, error) {
 		return nil, errors.New("failed to create a file reader: " + filename)
 	}
 
-	return &FileReader{file: file, reader: reader, buffer: nil, lastErr: nil}, nil
+	fr := FileReader{file: file, reader: reader, buffer: nil, lastErr: nil, pipe:make(chan SetVal)}
+	go fr.pushValueToChannel()
+	return &fr, nil
 }
 
 func (fr *FileReader) Peek() (int, error) {
 	if fr.buffer == nil {
 		fr.buffer = new(int)
-		fr.readValue()
+		fr.readValueFromChannel()
+		//fr.readValueFromFile()
 	}
 	return *fr.buffer, fr.lastErr
 }
 
 func (fr *FileReader) Next() (int, error) {
 	if fr.buffer != nil {
-		fr.readValue()
+		fr.readValueFromChannel()
+		//fr.readValueFromFile()
 	}
 	return fr.Peek()
 }
@@ -55,28 +61,47 @@ func (fr *FileReader) Close() {
 	fr.file.Close()
 }
 
-func (fr *FileReader) readValue() {
+func (fr *FileReader) readValue() (int, error) {
 	line, err := fr.reader.ReadString('\n')
 	if err != nil {
-		*fr.buffer = 0
-		fr.lastErr = err
-		return
+		return math.MaxInt64, err
 	}
 
 	line = strings.TrimSuffix(line, "\n")
 	if len(line) == 0 {
-		*fr.buffer = 0
-		fr.lastErr = io.EOF
-		return
+		return math.MaxInt64, io.EOF
 	}
 
 	val, err := strconv.Atoi(line)
 	if err != nil {
-		*fr.buffer = 0
-		fr.lastErr = fmt.Errorf("invalid value `%s` in %s", line, fr.file.Name())
-		return
+		return math.MaxInt64, fmt.Errorf("invalid value `%s` in %s", line, fr.file.Name())
 	}
 
-	*fr.buffer = val
-	fr.lastErr = nil
+	return val, nil
+}
+
+func (fr *FileReader) pushValueToChannel() {
+	var val int
+	var err error
+	for val, err = fr.readValue(); err == nil; val, err = fr.readValue() {
+		fr.pipe <- SetVal{val: val, err: err}
+	}
+	fr.pipe <- SetVal{val: val, err: err}
+	close(fr.pipe)
+	fr.file.Close()
+}
+
+func (fr *FileReader) readValueFromChannel() {
+	val, ok := <-fr.pipe
+	if ok {
+		fr.lastErr = val.err
+		*fr.buffer = val.val
+	} else {
+		fr.lastErr = io.EOF
+		*fr.buffer = math.MaxInt64
+	}
+}
+
+func (fr *FileReader) readValueFromFile() {
+	*fr.buffer, fr.lastErr = fr.readValue()
 }

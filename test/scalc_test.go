@@ -97,6 +97,7 @@ func TestPositiveEdgeCases(t *testing.T) {
 }
 
 func TestScalcSanity(t *testing.T) {
+	// TODO: Consider dynamic generation of an input sets/files instead of usage of predefined set files
 	testMap := map[string][]int{
 		"[ SUM a.txt ]":                                    {1, 2, 3},
 		"[ INT a.txt ]":                                    {1, 2, 3},
@@ -109,6 +110,7 @@ func TestScalcSanity(t *testing.T) {
 		"[ SUM [ INT a1.txt c.txt ] [ DIF a.txt b.txt ] ]": {1},
 		"[ SUM [ DIF a.txt b.txt ] [ INT a1.txt c.txt ] ]": {1},
 		"[ SUM [ DIF a.txt b.txt ] [ INT a1.txt c.txt ] aN.txt [ SUM a0.txt b.txt ] ]": {1, 2, 3, 4, 1024, 2048},
+		"[ INT a.txt [ SUM aHuge.txt bHuge.txt ] ]": {1, 2, 3},
 	}
 
 	for exp, expDataStream := range testMap {

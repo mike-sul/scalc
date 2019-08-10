@@ -13,7 +13,8 @@ type InterOperator struct {
 }
 
 func NewInterOperator(sets []SetReader) SetReader {
-	return NewProxy(&InterOperator{inputSets: sets})
+	//return NewProxy(&InterOperator{inputSets: sets})
+	return NewChannelProxy(&InterOperator{inputSets: sets})
 }
 
 func (i *InterOperator) ComputeNextValue() (int, error) {
