@@ -72,3 +72,24 @@ scalc [ SUM [ DIF a.txt b.txt c.txt ] [ INT b.txt c.txt ] ]
 3
 4
 ```
+
+## Racket lang alternative
+
+Racket lang has built in support of sets and sets arithmetic, see here https://docs.racket-lang.org/reference/sets.html#%28def._%28%28lib._racket%2Fset..rkt%29._set-union%29%29
+
+### Install
+
+```
+sudo add-apt-repository ppa:plt/racket -y
+sudo apt-get update -y
+sudo apt-get install racket -y
+```
+
+### Run
+```
+mike@msul:~/work/private/go/src/github.com/mike-sul/scalc/test$ racket 
+Welcome to Racket v7.4.
+> [ sort [ set-union [ set-subtract [ file->list "a.txt" ] [file->list "b.txt"] [file->list "c.txt"] ] [ set-intersect [ file->list "b.txt"] [ file->list "c.txt" ] ] ] < ]
+'(1 3 4)
+> 
+```
