@@ -53,6 +53,7 @@ func TestNegativeEdgeCases(t *testing.T) {
 		"[ NOTSUPPORTED a.txt ]",
 		"[ NOTSUPPORTED [ ] ]",
 		"[ DIF [ SUM [ INT [ DIF [ ] ] ] ] ]",
+		"[ SUM a.txt b.txt",
 	}
 
 	for _, exp := range invExp {

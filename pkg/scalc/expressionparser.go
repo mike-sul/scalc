@@ -29,7 +29,7 @@ func ParseExpression(exp []string, indx int) (SetReader, int, error) {
 	var nextSetErr error = nil
 	var curIndx int
 
-	for curIndx = indx + 2; exp[curIndx] != "]"; curIndx++ {
+	for curIndx = indx + 2; curIndx < len(exp) && exp[curIndx] != "]"; curIndx++ {
 
 		var nextSet SetReader = nil
 
@@ -45,6 +45,10 @@ func ParseExpression(exp []string, indx int) (SetReader, int, error) {
 			break
 		}
 		inputSets = append(inputSets, nextSet)
+	}
+
+	if curIndx >= len(exp) {
+		return nil, curIndx, errors.New("no `]` found at the end of the input expression")
 	}
 
 	if nextSetErr != nil {
